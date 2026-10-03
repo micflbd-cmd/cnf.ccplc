@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C&amp;F Agent Acknowledgement — Crown Cement</title>
+<style>
+:root{--navy:#0a1e42;--blue:#1d63d8;--bg:#eef3fb;--border:#dfe4ec;--text:#1b2434;--muted:#6b7686;--green:#1a8f4c;--amber:#c27b00;--red:#d64545;}
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13.5px}
+header{background:var(--navy);color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:17px}header small{display:block;color:#9fe0b0;font-size:12px;margin-top:2px}
+header .who{font-size:12.5px;text-align:right}
+main{max-width:1250px;margin:0 auto;padding:16px}
+.card{background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden}
+.card>h2{margin:0;padding:10px 14px;font-size:14px;background:#e3eefc;color:var(--navy)}
+.card .body{padding:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.two{display:grid;grid-template-columns:1.1fr 1fr;gap:16px}@media(max-width:900px){.two{grid-template-columns:1fr}}
+label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font:inherit;background:#fff}
+input[readonly]{background:#f5f7fb}
+.kv{border:1px solid var(--border);border-radius:6px;padding:8px 10px;background:#fff}.kv b{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px}
+.btn{padding:9px 16px;border-radius:6px;border:1px solid var(--blue);background:#fff;color:var(--blue);cursor:pointer;font:inherit;font-weight:600}
+.btn.solid{background:var(--blue);color:#fff}.btn:disabled{opacity:.5;cursor:default}
+table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
+th{background:#f3f6fb;color:var(--muted);font-size:11.5px}tr.row{cursor:pointer}tr.row:hover{background:#f3f7ff}tr.sel{background:#e6f0ff}
+.badge{display:inline-block;padding:2px 9px;border-radius:5px;font-size:11.5px;font-weight:600}
+.b-ok{background:#e1f6e8;color:var(--green)}.b-wait{background:#fff1d6;color:var(--amber)}.b-proc{background:#e1ecff;color:var(--blue)}.b-bad{background:#fde8e8;color:var(--red)}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}.tab{padding:9px 18px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font:inherit;font-weight:600;color:var(--navy)}.tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.duty input{padding:5px 6px;font-size:12px}.sumbox{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.sumbox div{border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center}.sumbox b{display:block;font-size:17px;margin-top:4px}
+#login{max-width:380px;margin:60px auto}#login .body>div{margin-bottom:12px}
+.err{color:var(--red);font-size:12.5px;min-height:18px}.hint{color:var(--muted);font-size:12px;margin-top:6px}
+.pager{display:flex;gap:6px;justify-content:flex-end;margin-top:10px;align-items:center}.pager button{padding:4px 10px}
+.doc{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+</style></head><body>
+<header><div><h1>C&amp;F Agent Acknowledgement — Shipment</h1><small>Confirm shipment details and acknowledge as C&amp;F agent</small></div>
+<div class="who" id="who" style="display:none"><b id="whoName"></b><br><a href="#" id="signOut" style="color:#9fc4ff">Sign out</a></div></header>
+<main>
+<div class="card" id="login"><h2>Sign in</h2><div class="body">
+<div><label>Login ID</label><input id="lid" autocomplete="username"></div>
+<div><label>PIN</label><input id="pin" type="password" autocomplete="current-password"></div>
+<div class="err" id="loginErr"></div>
+<button class="btn solid" id="loginBtn" style="width:100%">Sign in</button>
+<div class="hint"><a href="https://script.google.com/macros/s/AKfycbyNwnqIwc6aeI6SFOpDmCioC3stNQKTj3_p1stGUkDFCGZN726hc1-rVx9V52f9m_rX/exec" target="_blank" rel="noopener">Check server</a> (should show version v7-agent-login-fix)</div>
+<div class="hint">Your Login ID and PIN are given by Crown Cement. You will only see shipments assigned to you.</div></div></div>
+
+<div id="app" style="display:none">
+<div class="tabs"><button class="tab active" data-sec="secAck">Acknowledgement</button><button class="tab" data-sec="secBe">Bill of Entry</button></div>
+<div id="secAck">
+<div class="card"><h2>Selected Shipment</h2><div class="body"><div class="grid" id="top"></div>
+<div class="hint" id="topHint">Click a shipment in the list below, or choose one in the form.</div></div></div>
+
+<div class="two">
+<div class="card"><h2>Shipment Details</h2><div class="body"><div class="grid" id="details"></div></div></div>
+<div class="card"><h2>Document Status</h2><div class="body" id="docStatus"><div class="hint">No shipment selected.</div></div></div>
+</div>
+
+<div class="two">
+<div class="card"><h2>C&amp;F Agent Acknowledgement Form</h2><div class="body">
+<div class="grid">
+<div><label>C&amp;F Agent</label><input id="fAgent" readonly></div>
+<div><label>Acknowledgement Date</label><input id="fDate" type="date"></div>
+<div><label>Shipment No. (BL)</label><select id="fShip"></select></div>
+<div><label>LC No.</label><input id="fLc" readonly></div>
+<div><label>Port of Discharge</label><input id="fPort"></div>
+<div><label>ETA (Port of Discharge)</label><input id="fEta" type="date"></div>
+<div><label>Actual Arrival Date</label><input id="fArr" type="date"></div>
+<div><label>Remarks (if any)</label><textarea id="fRem" rows="2"></textarea></div></div>
+<h3 style="font-size:13px;margin:16px 0 6px">Acknowledgement Items</h3>
+<table><thead><tr><th>#</th><th>Item</th><th>Status</th><th>Remarks</th></tr></thead><tbody id="items"></tbody></table>
+<label style="display:flex;gap:8px;align-items:center;margin:14px 0;color:var(--text);font-size:12.5px"><input type="checkbox" id="fConfirm" style="width:auto"> I hereby confirm that all documents have been received and found in order for this shipment.</label>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" id="resetBtn">Reset</button><button class="btn solid" id="submitBtn">Submit Acknowledgement</button></div>
+<div class="hint" id="submitMsg"></div></div></div>
+
+<div class="card"><h2>My Shipments &amp; Acknowledgements</h2><div class="body">
+<table><thead><tr><th>#</th><th>Shipment No.</th><th>LC No.</th><th>ETA</th><th>Status</th><th>Ack Date</th></tr></thead><tbody id="list"></tbody></table>
+<div class="pager"><span id="pgInfo" class="hint" style="margin:0 auto 0 0"></span><button class="btn" id="pgPrev">‹</button><span id="pgNo"></span><button class="btn" id="pgNext">›</button></div>
+</div></div>
+</div>
+</div>
+<div id="secBe" style="display:none">
+<div class="card"><h2>Bill of Entry — Data Input (based on shipment)</h2><div class="body">
+<div class="grid"><div><label>Shipment</label><select id="bShip"></select></div></div>
+<div class="grid" id="bRef" style="margin-top:12px"></div>
+<div class="hint" id="bHint">Choose one of your shipments to enter its Bill of Entry. Only your own entries are shown.</div></div></div>
+<div id="bForm" style="display:none"></div>
+</div>
+</div>
+</main>
+<script>
+(function(){
+  // Only the agent's own Login ID + PIN are sent. The server decides which shipments belong to this agent.
+  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNwnqIwc6aeI6SFOpDmCioC3stNQKTj3_p1stGUkDFCGZN726hc1-rVx9V52f9m_rX/exec";
+  var S = { id:'', pin:'', name:'', ships:[], acks:[], be:[], sel:null, page:1 };
+  function $(i){ return document.getElementById(i); }
+  function esc(x){ return String(x == null ? '' : x).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function call(action, extra){
+    var body = Object.assign({ action: action, loginId: S.id, pin: S.pin }, extra || {});
+    return fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(body) }).then(function(r){ return r.json(); });
+  }
+  function key(lc, bl){ return lc + '|' + bl; }
+  function ackFor(s){ return S.acks.filter(function(a){ return key(a.lcNo, a.bl) === key(s.lcNo, s.bl); })[0] || null; }
+  function status(s){ var a = ackFor(s); return a ? a.status : 'Pending'; }
+  function badge(st){ return '<span class="badge ' + (st === 'Acknowledged' || st === 'Received' ? 'b-ok' : st === 'In Process' ? 'b-proc' : st === 'Not Received' ? 'b-bad' : 'b-wait') + '">' + esc(st) + '</span>'; }
+
+  function signIn(){
+    S.id = $('lid').value.trim(); S.pin = $('pin').value; $('loginErr').textContent = '';
+    if(!S.id || !S.pin){ $('loginErr').textContent = 'Enter your Login ID and PIN.'; return; }
+    $('loginBtn').disabled = true;
+    call('agentPortalData').then(function(r){
+      $('loginBtn').disabled = false;
+      if(!r.success){
+        S.pin = '';
+        var m = r.error || 'Could not sign in.';
+        if(/unknown action/i.test(m)) m = 'The server this page is talking to is running OLD code (' + m + '). Open the "Check server" link below — it must show version v7-agent-login-fix. If not, that deployment needs Deploy → Manage deployments → New version.';
+        $('loginErr').textContent = m; return;
+      }
+      S.name = r.agentName; S.ships = r.shipments || []; S.acks = r.acks || []; S.be = r.be || [];
+      $('login').style.display = 'none'; $('app').style.display = 'block'; $('who').style.display = 'block';
+      $('whoName').textContent = S.name; $('fAgent').value = S.name; $('pin').value = '';
+      renderAll(); beShips(); if(S.ships.length) select(S.ships[0]);
+    }).catch(function(e){ $('loginBtn').disabled = false; $('loginErr').textContent = 'Network error: ' + e.message; });
+  }
+  function signOut(){ S = { id:'', pin:'', name:'', ships:[], acks:[], be:[], sel:null, page:1 }; $('app').style.display = 'none'; $('who').style.display = 'none'; $('login').style.display = 'block'; $('lid').value = ''; }
+
+  function renderAll(){
+    var o = '<option value="">-- Select Shipment --</option>' + S.ships.map(function(s, i){ return '<option value="' + i + '">' + esc(s.bl || '(no BL)') + ' — LC ' + esc(s.lcNo) + '</option>'; }).join('');
+    $('fShip').innerHTML = o; renderList();
+  }
+  function renderList(){
+    var per = 10, pages = Math.max(1, Math.ceil(S.ships.length / per)); if(S.page > pages) S.page = pages;
+    var from = (S.page - 1) * per, rows = S.ships.slice(from, from + per);
+    $('list').innerHTML = rows.length ? rows.map(function(s, i){
+      var a = ackFor(s);
+      return '<tr class="row' + (S.sel === s ? ' sel' : '') + '" data-i="' + (from + i) + '"><td>' + (from + i + 1) + '</td><td>' + esc(s.bl) + '</td><td>' + esc(s.lcNo) + '</td><td>' + esc(s.eta || '--') + '</td><td>' + badge(status(s)) + '</td><td>' + esc(a ? a.ackDate || '--' : '--') + '</td></tr>';
+    }).join('') : '<tr><td colspan="6" class="hint">No shipments are assigned to you yet.</td></tr>';
+    $('list').querySelectorAll('tr.row').forEach(function(tr){ tr.addEventListener('click', function(){ select(S.ships[+tr.getAttribute('data-i')]); }); });
+    $('pgInfo').textContent = 'Showing ' + (S.ships.length ? from + 1 : 0) + ' to ' + (from + rows.length) + ' of ' + S.ships.length + ' records';
+    $('pgNo').textContent = S.page + ' / ' + pages; $('pgPrev').disabled = S.page <= 1; $('pgNext').disabled = S.page >= pages;
+  }
+  function kv(t, v){ return '<div class="kv"><b>' + esc(t) + '</b>' + esc(v || '--') + '</div>'; }
+  function select(s){
+    S.sel = s; var a = ackFor(s) || {};
+    $('fShip').value = String(S.ships.indexOf(s)); $('fLc').value = s.lcNo;
+    $('top').innerHTML = kv('LC No.', s.lcNo) + kv('Shipment No.', s.bl) + kv('Item / Commodity', s.item) + kv('Supplier', s.supplier) + kv('C&F Agent', S.name) +
+      kv('Port of Discharge', s.portDischarge) + kv('ETD', s.etd) + kv('ETA', s.eta) + kv('Shipment Status', s.status);
+    $('details').innerHTML = kv('Port of Loading', s.portLoading) + kv('Vessel Name', s.vessel) + kv('ETD (Port of Loading)', s.etd) + kv('ETA (Port of Discharge)', s.eta) +
+      kv('Quantity', s.qty ? s.qty + ' ' + (s.uom || '') : '') + kv('BE No.', s.beNo) + kv('Documents sent on', s.sendDate) + kv('Note from Crown Cement', s.sendRemarks);
+    var docs = s.docs || [], saved = {};   // ONLY the documents Crown Cement ticked in C&F Entry (Send Documents)
+    try { JSON.parse(a.items || '[]').forEach(function(x){ saved[x.name] = x; }); } catch(e) {}
+    $('items').innerHTML = !docs.length ? '<tr><td colspan="4" class="hint">No documents have been assigned to you for this shipment yet.</td></tr>' : docs.map(function(d, i){
+      var x = saved[d] || {}, st = x.status || 'Received';
+      return '<tr><td>' + (i + 1) + '</td><td class="nm">' + esc(d) + '</td><td><select class="st">' + ['Received','Not Received','Pending'].map(function(o){ return '<option' + (o === st ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select></td><td><input class="rm" value="' + esc(x.remarks || '') + '"></td></tr>';
+    }).join('');
+    $('docStatus').innerHTML = docs.map(function(d){ var x = saved[d]; return '<div class="doc"><span>' + esc(d) + '</span>' + (x ? badge(x.status) : badge('Pending')) + '</div>'; }).join('') || '<div class="hint">No documents have been assigned to you for this shipment yet.</div>';
+    $('fDate').value = a.ackDate || new Date().toISOString().slice(0, 10);
+    $('fPort').value = a.portDischarge || s.portDischarge || ''; $('fEta').value = a.eta || s.eta || '';
+    $('fArr').value = a.actualArrival || ''; $('fRem').value = a.remarks || ''; $('fConfirm').checked = !!a.confirmed;
+    $('submitMsg').textContent = ''; renderList();
+  }
+  function submit(){
+    var s = S.sel; if(!s){ $('submitMsg').textContent = 'Select a shipment first.'; return; }
+    var items = Array.prototype.filter.call($('items').querySelectorAll('tr'), function(tr){ return tr.querySelector('.nm'); }).map(function(tr){ return { name: tr.querySelector('.nm').textContent, status: tr.querySelector('.st').value, remarks: tr.querySelector('.rm').value }; });
+    var ack = { lcNo: s.lcNo, bl: s.bl, ackDate: $('fDate').value, eta: $('fEta').value, actualArrival: $('fArr').value, portDischarge: $('fPort').value,
+      remarks: $('fRem').value, items: items, confirmed: $('fConfirm').checked };
+    $('submitBtn').disabled = true; $('submitMsg').textContent = 'Saving to Google Sheet…';
+    call('agentSubmitAck', { ack: ack }).then(function(r){
+      $('submitBtn').disabled = false;
+      if(!r.success){ $('submitMsg').textContent = '✗ NOT saved: ' + (r.error || 'unknown error'); return; }
+      $('submitMsg').textContent = '✓ Saved — status: ' + r.status;
+      return call('agentPortalData').then(function(d){ if(d.success){ S.acks = d.acks || []; select(s); $('submitMsg').textContent = '✓ Saved — status: ' + r.status; } });
+    }).catch(function(e){ $('submitBtn').disabled = false; $('submitMsg').textContent = '✗ NOT saved — network error: ' + e.message; });
+  }
+
+  // ================= Bill of Entry data input =================
+  // Saved to the Google Sheet under this agent's name; the server only accepts shipments assigned to this agent.
+  var YN = ['', 'Yes', 'No'];
+  var SEC = [
+    ['A. Import Information', [['importType','Import Type','sel',['','Normal','Back-to-Back','EPZ','Others']],['currency','Currency','sel',['USD','EUR','BDT']],['exRate','Exchange Rate (BDT per 1 USD)','n'],
+      ['assessCcy','Assessed Value Currency','sel',['USD','EUR','BDT']],['totalAssessedUsd','Total Assessed Value (USD)','c']]],
+    ['B. Bill of Entry Information', [['portCode','Port Code','t'],['beNo','BE No.','t'],['beDate','BE Date','d'],['station','Customs Station','t'],['beType','BE Type','t'],
+      ['beStatus','BE Status','sel',['','Draft','Submitted','Assessed','Out of Charge']],['assessedBy','Assessed By','t'],['assessDate','Assessment Date','d'],['impName','Importer Name','t'],['impBin','Importer BIN','t'],
+      ['impAddr','Importer Address','t'],['tin','TIN','t'],['bizNature','Business Nature','t'],['licNo','License No. (IRC)','t'],['licDate','License Date','d'],['packages','No. of Packages','t'],['grossWt','Gross Weight (MT)','n'],['netWt','Net Weight (MT)','n']]],
+    ['C. Item & Assessment Details', [['goods','Description of Goods','t'],['hsCode','HS Code','t'],['uom','UOM','t'],['qty','Quantity (MT)','n'],['unitPrice','Unit Price (USD/MT)','n'],['fobUsd','FOB Value (USD)','c'],
+      ['freightUsd','Freight Value (USD)','n'],['insUsd','Insurance Value (USD)','n'],['cnfUsd','C&F Value (USD)','c'],['assessUsd','Assessable Value (USD)','c'],['assessBdt','Assessable Value (BDT)','c'],['itemRemarks','Remarks','t']]]
+  ];
+  var D = [], DOCS = [], bCur = null;
+  function bf(f){
+    var id = 'b_' + f[0], t = f[2], h = '<div><label>' + esc(f[1]) + '</label>';
+    if(t === 'sel') h += '<select id="' + id + '">' + f[3].map(function(o){ return '<option>' + esc(o) + '</option>'; }).join('') + '</select>';
+    else h += '<input id="' + id + '" type="' + (t === 'd' ? 'date' : 'text') + '"' + (t === 'n' || t === 'c' ? ' inputmode="decimal"' : '') + (t === 'c' ? ' readonly' : '') + '>';
+    return h + '</div>';
+  }
+  $('bForm').innerHTML = SEC.map(function(sc){ return '<div class="card"><h2>' + sc[0] + '</h2><div class="body"><div class="grid">' + sc[1].map(bf).join('') + '</div></div></div>'; }).join('') +
+    '<div class="card"><h2>D. Tax & Duty Details (based on assessed value)</h2><div class="body"><div style="overflow-x:auto"><table class="duty"><thead><tr><th>#</th><th>Duty / Tax Type</th><th>HS Code</th><th>As Per</th><th>Rate (%)</th><th>Assessable Value (BDT)</th><th>Amount (BDT)</th><th>Exemption / Rebate</th><th>Payable (BDT)</th><th></th></tr></thead><tbody id="bDuty"></tbody><tfoot><tr><th colspan="6">Total Payable (BDT)</th><th id="bTotAmt"></th><th></th><th id="bTotPay"></th><th></th></tr></tfoot></table></div><button class="btn" id="bAddRow" style="margin-top:8px">+ Add row</button></div></div>' +
+    '<div class="card"><h2>E. Documents Uploaded (for this BE)</h2><div class="body"><div id="bDocs"></div><input type="file" id="bFile" multiple accept=".pdf,.jpg,.jpeg,.png" style="margin-top:8px"><div class="hint">Only file names are recorded (PDF, JPG, PNG) — the files themselves are not uploaded.</div></div></div>' +
+    '<div class="card"><h2>F. BE Summary</h2><div class="body"><div class="sumbox"><div>Total Assessable Value (USD)<b id="bSUsd">0.00</b></div><div>Total Assessable Value (BDT)<b id="bSBdt">0.00</b></div><div>Total Payable Duty &amp; Tax (BDT)<b id="bSPay">0.00</b></div><div>BE Status<b id="bSStat">--</b></div><div>Payment Status<select id="b_payStatus"><option>Pending</option><option>Partial</option><option>Paid</option></select></div></div></div></div>' +
+    '<div class="card"><h2>G. Remarks / Notes</h2><div class="body"><textarea id="b_notes" rows="3"></textarea><div class="hint" id="bAudit"></div>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="btn" id="bClear">Clear</button><button class="btn solid" id="bSave">Save Bill of Entry</button></div><div class="hint" id="bMsg"></div></div></div>';
+
+  function nv(id){ return parseFloat(String($(id).value).replace(/,/g, '')) || 0; }
+  function setN(id, v){ $(id).value = v ? String(Math.round(v * 100) / 100) : ''; }
+  function f2(v){ return (Math.round(v * 100) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function recalc(){
+    setN('b_fobUsd', nv('b_qty') * nv('b_unitPrice'));
+    setN('b_cnfUsd', nv('b_fobUsd') + nv('b_freightUsd') + nv('b_insUsd'));
+    setN('b_assessUsd', nv('b_cnfUsd')); setN('b_totalAssessedUsd', nv('b_assessUsd'));
+    setN('b_assessBdt', nv('b_assessUsd') * nv('b_exRate'));
+    D.forEach(function(r){ if(!r.dirty) r.assess = nv('b_assessBdt') ? String(nv('b_assessBdt')) : ''; });
+    drawDuty();
+  }
+  function dutyCalc(r){ var a = parseFloat(r.assess) || 0, rate = parseFloat(r.rate) || 0; if(r.rate !== '') r.amount = String(Math.round(a * rate) / 100); r.payable = String(Math.round(((parseFloat(r.amount) || 0) - (parseFloat(r.exempt) || 0)) * 100) / 100); }
+  function drawDuty(){
+    D.forEach(dutyCalc);
+    $('bDuty').innerHTML = D.map(function(r, i){
+      function inp(k, w){ return '<td><input data-r="' + i + '" data-f="' + k + '" value="' + esc(r[k]) + '" style="width:' + w + 'px"></td>'; }
+      return '<tr><td>' + (i + 1) + '</td>' + inp('type', 150) + inp('hs', 90) + inp('asPer', 60) + inp('rate', 55) + inp('assess', 110) + inp('amount', 100) + inp('exempt', 90) + '<td>' + f2(parseFloat(r.payable) || 0) + '</td><td><button class="btn" data-del="' + i + '">✕</button></td></tr>';
+    }).join('');
+    var amt = 0, pay = 0; D.forEach(function(r){ amt += parseFloat(r.amount) || 0; pay += parseFloat(r.payable) || 0; });
+    $('bTotAmt').textContent = f2(amt); $('bTotPay').textContent = f2(pay);
+    $('bSUsd').textContent = f2(nv('b_assessUsd')); $('bSBdt').textContent = f2(nv('b_assessBdt')); $('bSPay').textContent = f2(pay); $('bSStat').textContent = $('b_beStatus').value || '--';
+    $('bDuty').querySelectorAll('input').forEach(function(el){
+      el.addEventListener('change', function(){
+        var r = D[+el.getAttribute('data-r')], k = el.getAttribute('data-f'); r[k] = el.value;
+        if(k === 'assess') r.dirty = true;
+        if(k === 'amount') r.rate = '';          // a typed amount replaces the rate calculation
+        drawDuty();
+      });
+    });
+    $('bDuty').querySelectorAll('[data-del]').forEach(function(b){ b.addEventListener('click', function(){ D.splice(+b.getAttribute('data-del'), 1); drawDuty(); }); });
+  }
+  function newRow(t){ return { type: t || '', hs: $('b_hsCode').value, asPer: 'Value', rate: '', assess: '', amount: '', exempt: '', payable: '', dirty: false }; }
+  function drawDocs(){
+    $('bDocs').innerHTML = DOCS.length ? DOCS.map(function(d, i){ return '<div class="doc"><span>📄 ' + esc(d) + '</span><button class="btn" data-dd="' + i + '">Remove</button></div>'; }).join('') : '<div class="hint">No documents listed yet.</div>';
+    $('bDocs').querySelectorAll('[data-dd]').forEach(function(b){ b.addEventListener('click', function(){ DOCS.splice(+b.getAttribute('data-dd'), 1); drawDocs(); }); });
+  }
+  $('bFile').addEventListener('change', function(){ Array.prototype.forEach.call($('bFile').files, function(f){ if(DOCS.indexOf(f.name) === -1) DOCS.push(f.name); }); $('bFile').value = ''; drawDocs(); });
+  $('bAddRow').addEventListener('click', function(){ D.push(newRow('')); drawDuty(); });
+  ['qty','unitPrice','freightUsd','insUsd','exRate'].forEach(function(k){ $('b_' + k).addEventListener('input', recalc); });
+  $('b_beStatus').addEventListener('change', drawDuty);
+
+  function beShips(){ $('bShip').innerHTML = '<option value="">-- Select Shipment --</option>' + S.ships.map(function(s, i){ return '<option value="' + i + '">' + esc(s.bl || '(no BL)') + ' — LC ' + esc(s.lcNo) + '</option>'; }).join(''); }
+  function beFor(s){ return S.be.filter(function(e){ return e.lcNo === s.lcNo && e.bl === s.bl; })[0] || null; }
+  function beLoad(s){
+    bCur = s; var e = beFor(s) || {};
+    $('bRef').innerHTML = kv('PI No.', s.piNo) + kv('LC No.', s.lcNo) + kv('Supplier', s.supplier) + kv('Item / Commodity', s.item) + kv('Origin Country', s.origin) + kv('BL No.', s.bl) +
+      kv('Vessel / Carrier', s.vessel) + kv('Port of Loading', s.portLoading) + kv('Port of Discharge', s.portDischarge) + kv('Actual Arrival', s.actualArrival) + kv('C&F Agent', S.name);
+    $('bForm').style.display = '';
+    SEC.forEach(function(sc){ sc[1].forEach(function(f){ var el = $('b_' + f[0]), v = e[f[0]]; el.value = (v === undefined || v === null || v === '') ? (f[2] === 'sel' ? f[3][0] : '') : v; }); });
+    if(!e.goods) $('b_goods').value = s.item || ''; if(!e.uom) $('b_uom').value = s.uom || ''; if(!e.qty && s.qty) $('b_qty').value = s.qty;
+    try { D = JSON.parse(e.duties || '[]'); } catch(x) { D = []; }
+    if(!D.length) D = ['Customs Duty (CD)','Regulatory Duty (RD)','Supplementary Duty (SD)','VAT (Import)','AIT (Advance Income Tax)'].map(newRow);
+    D.forEach(function(r){ r.dirty = !!r.assess; });
+    DOCS = String(e.docs || '').split(';').filter(Boolean);
+    $('b_payStatus').value = e.payStatus || 'Pending'; $('b_notes').value = e.notes || '';
+    $('bAudit').textContent = e.createdOn ? 'Created by ' + e.createdBy + ' on ' + e.createdOn.slice(0, 16).replace('T', ' ') + '   |   Last updated by ' + e.updatedBy + ' on ' + e.updatedOn.slice(0, 16).replace('T', ' ') : 'New entry — not saved yet.';
+    $('bMsg').textContent = ''; drawDocs();
+    if(!e.goods) recalc(); else { setN('b_fobUsd', nv('b_qty') * nv('b_unitPrice')); drawDuty(); }
+  }
+  $('bShip').addEventListener('change', function(){ var v = $('bShip').value; if(v === '') { $('bForm').style.display = 'none'; bCur = null; return; } beLoad(S.ships[+v]); });
+  $('bClear').addEventListener('click', function(){ if(bCur){ var keep = S.be; S.be = S.be.filter(function(e){ return !(e.lcNo === bCur.lcNo && e.bl === bCur.bl); }); beLoad(bCur); S.be = keep; } });
+  $('bSave').addEventListener('click', function(){
+    if(!bCur){ $('bMsg').textContent = 'Select a shipment first.'; return; }
+    recalc();
+    var b = { lcNo: bCur.lcNo, bl: bCur.bl, duties: D.map(function(r){ return { type: r.type, hs: r.hs, asPer: r.asPer, rate: r.rate, assess: r.assess, amount: r.amount, exempt: r.exempt, payable: r.payable }; }),
+      totalPayable: String(D.reduce(function(a, r){ return a + (parseFloat(r.payable) || 0); }, 0)), docs: DOCS.join(';'), payStatus: $('b_payStatus').value, notes: $('b_notes').value };
+    SEC.forEach(function(sc){ sc[1].forEach(function(f){ b[f[0]] = $('b_' + f[0]).value; }); });
+    $('bSave').disabled = true; $('bMsg').textContent = 'Saving to Google Sheet…';
+    call('agentSaveBE', { be: b }).then(function(r){
+      $('bSave').disabled = false;
+      if(!r.success){ $('bMsg').textContent = '✗ NOT saved: ' + (r.error || 'unknown error'); return; }
+      return call('agentPortalData').then(function(d){ if(d.success){ S.be = d.be || []; beLoad(bCur); } $('bMsg').textContent = '✓ Bill of Entry saved to Google Sheet.'; });
+    }).catch(function(e){ $('bSave').disabled = false; $('bMsg').textContent = '✗ NOT saved — network error: ' + e.message; });
+  });
+  document.querySelectorAll('.tab').forEach(function(t){ t.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('active', x === t); });
+    $('secAck').style.display = t.getAttribute('data-sec') === 'secAck' ? '' : 'none'; $('secBe').style.display = t.getAttribute('data-sec') === 'secBe' ? '' : 'none';
+  }); });
+  $('loginBtn').addEventListener('click', signIn);
+  ['lid','pin'].forEach(function(i){ $(i).addEventListener('keydown', function(e){ if(e.key === 'Enter') signIn(); }); });
+  $('signOut').addEventListener('click', function(e){ e.preventDefault(); signOut(); });
+  $('fShip').addEventListener('change', function(){ var v = $('fShip').value; if(v !== '') select(S.ships[+v]); });
+  $('resetBtn').addEventListener('click', function(){ if(S.sel) select(S.sel); });
+  $('submitBtn').addEventListener('click', submit);
+  $('pgPrev').addEventListener('click', function(){ S.page--; renderList(); });
+  $('pgNext').addEventListener('click', function(){ S.page++; renderList(); });
+})();
+</script></body></html>
