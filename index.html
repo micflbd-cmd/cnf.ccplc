@@ -176,7 +176,7 @@ th{background:#f3f6fb;color:var(--muted);font-size:11.5px}tr.row{cursor:pointer}
 <script>
 (function(){
   // Only the agent's own Login ID + PIN are sent. The server decides which shipments belong to this agent.
-  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjPTgol9rgDmUeguNoFxr6v_rCTleHkPzp0uVczePmFp0_faVURlmcjXDzYgNuQn3v/exec";
+  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyL58b8FnzVNe3JC-br9muND3vO4_D3zz1F6OHTM1yRT_W9Xj7v5Si_BU8uVu6mQw/exec";
   var S = { id:'', pin:'', name:'', ships:[], acks:[], be:[], fa:[], sel:null, page:1, pendOnly:false };
   function $(i){ return document.getElementById(i); }
   function esc(x){ return String(x == null ? '' : x).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
